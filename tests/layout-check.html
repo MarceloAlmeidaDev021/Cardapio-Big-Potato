@@ -1,0 +1,63 @@
+<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>Verificação do cardápio</title>
+<style>iframe{display:block;border:0;height:800px}body{margin:0}pre{white-space:pre-wrap}</style>
+<pre id="results">Executando…</pre><iframe src="../index.html" title="Cardápio em teste"></iframe>
+<script>
+const frame=document.querySelector('iframe'), results=document.querySelector('#results');
+const errors=[];const reports=[];
+frame.addEventListener('load',async()=>{
+ const w=frame.contentWindow,d=frame.contentDocument;
+ w.addEventListener('error',e=>errors.push(e.message));
+ const assert=(ok,msg)=>{if(!ok)throw Error(msg)};
+ const pause=()=>new Promise(r=>setTimeout(r,80));
+ const clickCategory=name=>{const b=[...d.querySelectorAll('#categories button')].find(b=>b.textContent===name);assert(b,'Categoria '+name);b.click()};
+ const search=value=>{const input=d.querySelector('#search');input.value=value;input.dispatchEvent(new w.Event('input',{bubbles:true}))};
+ try{
+  for(const width of [375,430,768,1024,1440]){
+   frame.style.width=width+'px';await pause();clickCategory('Todos');search('');await pause();
+   assert(d.documentElement.scrollWidth<=width,'Página excede '+width);
+   const grid=d.querySelector('#products');const columns=w.getComputedStyle(grid).gridTemplateColumns.split(' ').length;
+   assert(columns===(width<=650?1:width<=900?2:3),'Colunas em '+width);
+   for(const tab of d.querySelectorAll('#categories button')){const r=tab.getBoundingClientRect();assert(r.left>=0&&r.right<=width,'Categoria cortada em '+width)}
+   const cards=[...d.querySelectorAll('.product-card')];assert(cards.length===156,'Todos os produtos');
+   for(const card of cards){const r=card.getBoundingClientRect();assert(r.width>0&&r.left>=0&&r.right<=width,'Card cortado em '+width)}
+   cards[0].click();await pause();
+   const panel=d.querySelector('.modal-panel'),r=panel.getBoundingClientRect();
+   assert(r.left>=0&&r.right<=width&&r.top>=0&&r.bottom<=w.innerHeight+1,'Modal fora da tela em '+width);
+   const close=d.querySelector('.modal-close').getBoundingClientRect();assert(close.top>=r.top&&close.bottom<=r.bottom,'Fechar visível');
+   d.querySelector('.modal-close').click();reports.push(width+'px: grid, categorias, cards e modal OK');
+  }
+  for(const name of [...d.querySelectorAll('#categories button')].map(b=>b.textContent)){clickCategory(name);assert(d.querySelectorAll('.product-card').length>0,'Filtro '+name);
+   for(const sub of [...d.querySelectorAll('#subcategories button')]){sub.click();assert(d.querySelectorAll('.product-card').length>0,'Subcategoria '+sub.textContent)}
+  }
+  clickCategory('Doces');search('PRESTIGIO');assert(d.querySelectorAll('.product-card').length===1,'Nome sem acentos');
+  search('COCO');assert(d.querySelectorAll('.product-card').length===2,'Descrição');search('zzzzzz');assert(d.querySelector('.empty'),'Sem resultados');
+  d.querySelector('#clearSearch').click();assert(d.querySelector('#categoryTitle').textContent==='Doces','Limpar preserva categoria');
+  clickCategory('Todos');search('');
+  for(const card of d.querySelectorAll('.product-card')){
+   card.focus();card.click();assert(d.querySelector('.modal-panel'),'Card abre detalhes');
+   const buttons=[...d.querySelectorAll('#modalRoot button')];buttons.at(-1).focus();
+   d.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Tab',bubbles:true,cancelable:true}));assert(d.activeElement===buttons[0],'Ciclo de foco');
+   d.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));assert(!d.querySelector('.modal-panel')&&d.activeElement===card,'Escape e retorno de foco');
+  }
+  for(const [category,name,file] of [
+    ['Batatas recheadas','Potato nº 01','batata numero 1.png'],
+    ['Batatas recheadas','Potato nº 05','batata numero 5.png'],
+    ['Pastéis grandes (23 cm)','Casal 20','pastel de carne e mussarela.png'],
+    ['Pastéis pequenos (16 cm)','Casal 20','pastel de carne e mussarela.png']
+  ]) {
+    clickCategory(category);search('');
+    const card=[...d.querySelectorAll('.product-card')].find(c=>c.querySelector('h3').textContent===name);card.click();
+    const photo=d.querySelector('.modal-product-photo');assert(photo&&decodeURI(photo.src).endsWith(file),'Imagem correta: '+name);
+    await new Promise((resolve,reject)=>{if(photo.complete){photo.naturalWidth?resolve():reject(Error('Imagem inválida'))}else{photo.addEventListener('load',resolve,{once:true});photo.addEventListener('error',()=>reject(Error('Falha ao carregar imagem')),{once:true})}});
+    assert(d.querySelector('.modal-body p').textContent===card.querySelector('p').textContent,'Descrição preservada');
+    d.querySelector('.modal-close').click();
+  }
+  clickCategory('Todos');search('');
+  reports.push('Quatro associações de fotos: carregamento e descrição OK');
+  const first=d.querySelector('.product-card');first.click();const overlay=d.querySelector('.modal-overlay');overlay.click();assert(!d.querySelector('.modal-panel'),'Fechar pelo fundo');
+  w.scrollTo({top:600,behavior:'instant'});await pause();const saved=w.scrollY;first.click();d.querySelector('.modal-back').click();await pause();assert(Math.abs(w.scrollY-saved)<2,'Preservação da rolagem');
+  assert(errors.length===0,'Erros no console: '+errors.join(', '));
+  results.textContent='PASSOU\n'+reports.join('\n')+'\n156 cards, filtros e subfiltros, busca, limpeza, modal, foco e rolagem OK';
+ }catch(e){results.textContent='FALHOU: '+e.message+'\n'+reports.join('\n')}
+});
+</script></html>

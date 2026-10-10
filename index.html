@@ -1,0 +1,109 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#151515">
+  <meta name="description" content="Cardápio digital Big Potato & Big Pastel">
+  <title>Big Potato & Big Pastel | Cardápio</title>
+
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+
+<body>
+  <header class="hero">
+    <div class="container">
+      <div class="topbar">
+      <div class="brand">
+        <div class="brand-mark">
+          <img class="brand-logo" src="images/logo.png" alt="" width="1254" height="1254" decoding="async">
+        </div>
+        <div>
+          <div class="brand-name">Big Potato</div>
+          <div class="brand-sub">Big Pastel</div>
+        </div>
+      </div>
+      <a class="menu-link" href="#menu">Explorar cardápio <span aria-hidden="true">↗</span></a>
+      </div>
+
+      <div class="hero-layout">
+      <div class="hero-content">
+        <h1>Muito sabor em<br><span>cada escolha.</span></h1>
+        <p>Batatas recheadas, pastéis, pratos e bebidas.</p>
+        <a class="hero-link" href="#menu">Encontre seu favorito <span aria-hidden="true">↓</span></a>
+      </div>
+      <figure class="hero-photo">
+        <img src="images/batatas/batata numero 1.png" alt="Potato nº 01: strogonoff de carne, champignon e batata palha" width="600" height="600" decoding="async" fetchpriority="high">
+        <figcaption>Big Potato <span>Todo o sabor, em cada detalhe.</span></figcaption>
+      </figure>
+      </div>
+
+      <div class="search-row">
+      <label class="search-label" for="search">O que vai ser hoje?</label>
+      <div class="search-control">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg>
+      <input
+        id="search"
+        class="search"
+        type="search"
+        placeholder="Busque um sabor ou ingrediente"
+        aria-label="Pesquisar no cardápio"
+        aria-controls="products"
+      >
+      <button id="clearSearch" class="clear-search" type="button" hidden>Limpar</button>
+      </div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="category-section" aria-label="Categorias do cardápio">
+    <div class="container">
+      <div id="categories" class="tabs"></div>
+    </div>
+  </nav>
+
+  <main id="menu" class="container">
+
+    <div class="section-head">
+      <div>
+        <h2 id="categoryTitle">Batatas recheadas</h2>
+        <p id="categoryDescription">
+          Toque em qualquer produto para visualizar.
+        </p>
+      </div>
+      <span id="itemCount" class="item-count" role="status" aria-live="polite" aria-atomic="true"></span>
+    </div>
+
+    <div id="subcategories" class="tabs"></div>
+    <div class="accent-line"></div>
+    <div id="products" class="product-grid"></div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="footer-top">
+      <div>
+      <h2>Gostou? A gente tem<br><span>mais sabor por lá.</span></h2>
+      <p>Novidades, sabores e promoções no Instagram.</p>
+      </div>
+      <a
+        class="instagram"
+        href="https://www.instagram.com/bigpotatoebigpastel/"
+        target="_blank"
+        rel="noopener noreferrer"
+      >@bigpotatoebigpastel <span aria-hidden="true">↗</span></a>
+      </div>
+      <div class="footer-divider"></div>
+      <p class="copyright">© 2026 Big Potato & Big Pastel</p>
+    </div>
+  </footer>
+
+  <div id="modalRoot"></div>
+
+  <script src="assets/js/menu-data.js" defer></script>
+  <script src="assets/js/app.js" defer></script>
+</body>
+</html>

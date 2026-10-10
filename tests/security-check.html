@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<title>Verificação de segurança do Big Pastel</title>
+<pre id="results">Executando…</pre>
+<iframe src="../index.html" title="Cardápio em teste" width="430" height="800"></iframe>
+<script>
+const frame = document.querySelector('iframe');
+frame.addEventListener('load', async () => {
+  const w = frame.contentWindow, d = frame.contentDocument, reports = [];
+  const assert = (ok, message) => { if (!ok) throw Error(message); };
+  const pause = () => new Promise(resolve => setTimeout(resolve, 100));
+  const search = value => {
+    const input = d.querySelector('#search');
+    input.value = value;
+    input.dispatchEvent(new w.Event('input', { bubbles: true }));
+  };
+  let product;
+  try {
+    const policy = d.querySelector('meta[http-equiv="Content-Security-Policy"]')?.content;
+    for (const directive of ["script-src 'self'", "connect-src 'none'", "object-src 'none'", "base-uri 'none'", "form-action 'none'"]) {
+      assert(policy?.includes(directive), 'CSP: ' + directive);
+    }
+    assert(d.querySelector('meta[name="referrer"]')?.content === 'no-referrer', 'Política de referrer');
+    for (const link of d.querySelectorAll('a[target="_blank"]')) {
+      assert(link.relList.contains('noopener') && link.relList.contains('noreferrer'), 'Proteção do link externo');
+      assert(new URL(link.href).protocol === 'https:', 'Link externo usa HTTPS');
+    }
+    assert([...d.scripts].every(script => script.src && new URL(script.src).protocol === new URL(d.URL).protocol), 'Scripts locais sem código inline');
+    reports.push('CSP, referrer, scripts locais e links externos OK');
+    const payload = '<img src=x onerror="window.__securityXss=1">';
+    for (const query of [payload, '<svg onload="window.__securityXss=1">', "' OR 1=1 --", 'javascript:alert(1)', 'a'.repeat(10000)]) {
+      search(query);
+      await pause();
+      assert(w.__securityXss === undefined, 'Injeção na busca');
+      assert(d.querySelector('.empty'), 'Busca inválida retorna mensagem segura');
+      assert(!d.querySelector('#products img, #products svg, #products script'), 'Busca interpretada como texto');
+    }
+    search('');
+    reports.push('Busca: payloads HTML, SVG, SQL, URL javascript e texto longo OK');
+    product = w.getCategory('batatas');
+    const categoryName = product.name;
+    product.name = payload;
+    w.render();
+    assert(d.querySelector('#categoryTitle').textContent === payload && !d.querySelector('#categoryTitle img'), 'Categoria interpretada como texto');
+    product.name = categoryName;
+    const injected = { id: -1, category: 'batatas', name: payload, description: payload, price: 1, group: payload };
+    const card = w.createProductCard(injected);
+    d.querySelector('#products').append(card);
+    assert(card.querySelector('h3').textContent === payload && card.querySelector('p').textContent === payload, 'Dados exibidos literalmente');
+    assert(!card.querySelector('img, svg, script'), 'Dados não criam elementos HTML');
+    card.click();
+    assert(d.querySelector('#modalTitle').textContent === payload && !d.querySelector('#modalRoot img, #modalRoot svg, #modalRoot script'), 'Modal resistente a injeção');
+    await pause();
+    assert(w.__securityXss === undefined, 'Nenhum payload executado');
+    d.querySelector('.modal-close').click();
+    w.render();
+    reports.push('Categorias, cards e modal: dados maliciosos permanecem texto OK');
+    const inline = d.createElement('script');
+    inline.textContent = 'window.__securityInline=1';
+    d.head.append(inline);
+    await pause();
+    assert(w.__securityInline === undefined, 'CSP bloqueia script inline');
+    inline.remove();
+    const object = d.createElement('object');
+    object.data = 'data:text/html,<script>parent.__securityObject=1<\/script>';
+    d.body.append(object);
+    await pause();
+    assert(!object.contentDocument && w.__securityObject === undefined, 'CSP bloqueia objetos');
+    object.remove();
+    reports.push('CSP bloqueia script inline e conteúdo object OK');
+    document.querySelector('#results').textContent = 'PASSOU\n' + reports.join('\n');
+  } catch (error) {
+    document.querySelector('#results').textContent = 'FALHOU: ' + error.message + '\n' + reports.join('\n');
+  }
+});
+</script>
+</html>

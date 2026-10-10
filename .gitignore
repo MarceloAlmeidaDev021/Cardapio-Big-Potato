@@ -1,0 +1,20 @@
+# Credenciais e configurações locais
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+.aws/
+.codex/
+.vscode/
+# Dependências, caches e resultados gerados
+node_modules/
+Microsoft/
+*.log
+tests/*-log.txt
+tests/*-result.html
+tests/redesign-*.png
+Thumbs.db
+.DS_Store
